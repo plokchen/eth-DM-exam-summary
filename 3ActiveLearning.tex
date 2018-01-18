@@ -1,0 +1,60 @@
+% -*- root: main.tex -*-
+\section{Active Learning}
+\subsection*{Uncertainty sampling}
+Given pool of n unlabeled examples\\
+Repeat until we can infer all remaining labels:\\
+1. Assign each unlabeled data $x$ an score:\\
+$U_t(x) = U(x|x_{1:t-1}, y_{1:t-1})$\\
+2. Greedily pick the most uncertain example:\\
+$x_t = \arg\max_x U_t(x)$
+
+\subsection*{Example: SVM}
+Select point nearest to hyperplane decision boundary for labeling\\
+$x^* = \arg \min_{x_i \in U} |w^T x_i|$\\
+$U_t(x) = \frac{1}{|w_t^T x|}$
+
+\subsection*{Hashing hyperplane query}
+Let $h_{u,v}(a,b) = [h_u(a), h_v(b)] =$\\
+$[sign(u^T a), sign(v^T b)]$\\
+where $u,v \sim N(0,I)$\\
+Define hash familiy:\\
+$h_{H}(z) =
+\begin{cases}
+	h_{u,v}(z,z) \text{ , if z is a point vector}\\
+	h_{u,v}(z,-z) \text{ , if z is a hyperplane vector}
+\end{cases}$\\
+LHS collision probability:\\
+$Pr[h_{H}(w) = h_{H}(x)] =$\\
+$Pr[h_u(w) = h_u(x)]Pr[h_v[-w]=h_v(x)]$\\
+$\frac{1}{4}-\frac{1}{\pi^2}(\theta_{x,w} - \frac{\pi}{2})^2$
+
+\subsection*{Issues with uncertainty sampling}
+uncertain $\not =$ informative\\
+We need to capture how much information we gain about the true classifier for each label.
+
+\subsection*{Version Space}
+Set of all Classifers consistent with the data:\\
+$V(D) = \{w: \forall (x,y) \in D, sign(w^T x) = y\}$\\
+Our idea is to shrink the version space as fast as possible
+
+\subsection*{Relevant version space}
+Set of labeling of pool consistent with the data / They are plausible under some model we haven't ruled out yet:\\
+$\hat{V}(D,U) = \{h:U \rightarrow \{+1,-1\} : \exists w \in V(D),$\\
+$\forall x \in U: sign(w^T x) = h(x) \}$
+
+\subsection*{General binary search}
+1. Start with $D=\{\}$\\
+2. While $|\hat{V}(D,U)| > 1$:\\
+for each unlabeled example $x \in U$ compute:\\
+$v^+(x) = |\hat{V}(D \cup \{(x,+)\}, U)|$ (what if x is +1)\\
+$v^-(x) = |\hat{V}(D \cup \{(x,-)\}, U)|$ (what if x is -1)\\
+Pick $x = \arg \min_x \max(v^-(x), v^+(x))$
+
+\subsection*{Achieving balanced splits}
+We look at how labels affect the classifer.\\
+For each possible label $\{+,-\}$ we calculate resulting SVM with margin $m^+, m^-$.\\
+Define informativeness score:\\
+Max-min margin: $\max_x \min (m^+(x), m^-(x))$\\
+Ratio margin: $\max_x \min: \left ( \frac{m^+(x)}{m^-(x)}, \frac{m^-(x)}{m^+(x)} \right )$\\
+This method is comp. very expensive!
+

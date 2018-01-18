@@ -1,0 +1,86 @@
+% -*- root: main.tex -*-
+\section{Locality Sensitivity Hashing}
+\subsection*{Curse of dimensionality}
+Fix $\epsilon < 0$, $N$. If data is truly high dimensional:\\
+$\displaystyle \lim_{D\rightarrow \infty} Pr[d_{max}(N,D) \leq (1+\epsilon) d_{min}(N,D)] = 1$
+
+\subsection*{Jaccard distance / similarity}
+sim: $\frac{|A \cap B|}{|A \cup B|} \in [0,1]$, dist: $1- \frac{|A \cap B|}{|A \cup B|} \in [0,1]$
+
+\subsection*{Other distance functions}
+\textbf{Cosine distance:} Measures diff in angle between vectors. Family of hash functions for unif. rand. vector u:\\
+$h_u(x) = sign(u^Tx) \quad P(h_u(x) = h_u(y)) = 1- \frac{\theta_{x,y}}{\pi}$\\
+\textbf{Euclidean distance:} Family function for ran. line devided into buckets. If $d=||x-y||_2 >> a, h(x)= h(y)$ with low probability. $F$ forms a $(\frac{a}{2}, 2a, \frac{1}{2}, \frac{1}{3})$ sensitive family.
+
+\subsection*{Min-Hashing}
+Use random permutation $\pi$ to reorder the rows: $h_\pi(C) = \min_{i:C(i) = 1} \pi(i)$
+which is the minimum row number in which permuted column contains a 1.
+
+\subsection*{Property}
+$Pr[h_\pi(C_1) = h_\pi(C_2)] = Sim(C_1, C_2)$\\
+\textbf{Proof:} Create signature matrix for $C_1$ and $C_2$. Define $\#\{1,1\} = a, \#\{1,0\} = b, \#\{0,1\} = c$\\
+Assume we pick $\pi$ unif.at rand.\\
+$Pr_\pi[h_\pi(C_1) = h_\pi(C_2)]$\\
+$ = Pr[\text{stop at} \{1,1\} | \text{ we stop at} \{1,0\}, \{0,1\}, \{1,1\}]$\\
+$ = \frac{a}{a+b+c} = Sim(C_1, C_2)$
+
+\subsection*{Multiple Min-Hashing}
+To reduce misses, we can use multiple indep. random hash functions:\\
+$s = Sim(C_1, C_2) = Pr[\text{hit with 1 function}]$\\
+$\Rightarrow Pr[\text{miss with 1 function}] = 1-s$\\
+$\Rightarrow Pr[\text{miss with k functions}] = (1-s)^k$
+
+\subsection*{Permutation function}
+representing perm. $\pi$ as hash function $h$:\\
+$\pi(i) = (a\cdot i + b \mod p) \mod N$, where $p > N$\\
+$a \in_{u.r.t} \mathbb{R},\quad b \in_{u.r.t} \mathbb{N}_0$\\
+In this way we can store h very efficiently.
+
+\subsection*{Min-Hashing Algorithm}
+Initialize all $M(i,c) = \infty$\\
+1. For each column $c$:\\
+2. For each row $r$:\\
+3. if $c(r) = 1$:\\
+4. for each hashfunction $h_i$:\\
+5. $M(i,c) = min(h_i(r), M(i,c))$ 
+
+\subsection*{Signature matrix vs. similarity}
+Signature matrix represent similarity between documents.\\
+Jaccard distance $\equiv \frac{\text{\# difference of columns}}{\text{\# hash functions}}$\\
+but comparing all columns inefficient $O(N^2)$
+
+\subsection*{Band Hashing}
+we have vectors $s = [s_1,...,s_r]$\\
+Pick r hash functions $h_1,...,h_r$\\
+$h_i(s_i) = (a_i s_i + b_i) \mod m$\\
+$h(s) = \sum_{i=1}^r h_i(s_i) \mod m$
+
+\subsection*{Analysis of partitioning}
+Fix a band $j$:\\
+$Pr_h[h(B_{1,j}) = h(B_{2,j})] = s^r$\\
+$Pr_h[h(B_{1,j}) \not = h(B_{2,j})] =$\\
+$Pr[\text{no collision on j-th band}] =1-s^r$\\
+$Pr[\text{no collision on any band}] = (1-s^r)^b$\\
+$Pr[\text{some collision}]= 1-(1-s^r)^b =$\\
+$Pr[\text{$C_1$, $C_2$ are candidates pair}]$\\
+Now we can tune $r$ and $b$ to achieve our desired similarity threshold.
+
+\subsection*{General LHS}
+Consider a set $S$ with distance $d$ and a family $F$ of hash functions $h: S \rightarrow B = \{1,..,n\}$\\
+$F$ is called $(d_1,d_2,p_1,_2)$-sensitive if:\\
+$\forall x,y \in S : d(x,y) \leq d_1 \Rightarrow Pr[h(x)=h(y)] \geq p_1$\\
+$\forall x,y \in S : d(x,y) \geq d_2 \Rightarrow Pr[h(x) = h(y)] \leq p_2$
+
+\subsection*{r-way AND}
+decreases FP. Each member of $F'$ consists of a \emph{vector} of $r$ hash functions from $F$.\\
+For $h=[h_1,...,h_r] \in F', h(x)=h(y) \Leftrightarrow h_i(x) = h_i(y)$ for all $i$\\
+\textbf{Theorem}: $F$ is $(d_1,d_2,p_1,p_2)$-sensitive then $F'$ is $(d_1,d_2, p_1^r, p_2^r)$-sensitive.
+
+\subsection*{b-way OR}
+decreases FN. Each member of $F'$ consists of a \emph{vector} of $b$ hash functions from $F$.\\
+For $h=[h_1,...,h_r] \in F', h(x)=h(y) \Leftrightarrow h_i(x) = h_i(y)$ for some $i$\\
+\textbf{Theorem}: $F$ is $(d_1,d_2,p_1,p_2)$-sensitive then $F'$ is $(d_1,d_2, 1-(1-p_1)^b, 1-(1-p_2)^b)$-sensitive.
+
+\subsection*{Composing AND and OR}
+First apply r-way AND, then b-way OR: Then $F'$ is $(d_1,d_2, 1-(1-p_1^r)^b, 1-(1-p_2^r)^b)$-sensitive.
+First apply b-way OR, then r-way AND: Then $F'$ is $(d_1,d_2, (1-(1-p_1)^b)^r, (1-(1-p_2)^b)^r)$-sensitive.

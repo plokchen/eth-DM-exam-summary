@@ -1,0 +1,55 @@
+% -*- root: main.tex -*-
+\section{Support Vector Machine}
+\subsection*{Quadratic Programming}
+$\min_{w,\epsilon} w^Tw + C \sum_{i=1}^n \xi_i$\\
+$\text{s.t. } y_i w^T x_i \geq 1 - \xi_i \text{ and } \xi_i\geq0$
+
+\subsection*{Regularized hinge loss minimization}
+Given $w$, we can solve for optimal $\xi$.\\
+$\min_w w^T w + C \sum max(0, 1- y_i w^T x_i)$
+
+\subsection*{Norm-contrained hinge loss}
+$\min_w \sum_i \max(0,1-y_i w^T x_i) \text{, s.t. } ||w||_2\leq \frac{1}{\sqrt{\lambda}}$
+
+\subsection*{Projection step}
+$Proj_S(w) = \arg \min_{\hat{w} \in S} ||\hat{w} - w||_2$
+
+\subsection*{Online Convex Programming} % (fold)
+\label{ssub:online_convex_programming}
+Regret: $ R_T = \sum_{t=1}^T f_t(w_t) - \min_w \sum_{t=1}^T f_t(w)$ \\
+OCP Regret: $R_T \leq \frac{||S||^2\sqrt{T}}{2} + (\sqrt{T}-1/2) || \nabla f||^2$  for $\eta_t = 1 / \sqrt{t}$\\
+$\textrm{If new point violates margin } y_t (w_t x_t + b) < 1$ \\ 
+$\textrm{Update} \ w_{t+1} = w_t - \eta_t \nabla f_t(w_t)$ \\
+$\textrm{Project}\ \min \{w,\frac{w}{||w|| \lambda} \}$
+
+\subsection*{Modifications} % (fold)
+\textbf{SGD:} training samples picked at random.\\
+\textbf{H-strongly convex functions:} Lead to faster convergence: $O(logT/T)$ regret instead of $O(1/\sqrt{T})$ for normal convexity. H-strong convexity $\Leftrightarrow f(x') \geq f(x) + \triangledown f(x)^T(x'-x)+\frac{H}{2}||x'-x||^2 \forall x,x' \Leftrightarrow$ we can put a quadratic function tight at each point $\Leftrightarrow f''(x)$ is lower-bounded by a $c > 0$\\
+\textbf{PEGASOS:} Choose w_1 s.t. $||w_1|| \leq 1/\sqrt{\lambda}$ \\
+for each $t = 1:T$:\\
+sample $A_t \subseteq X$ (sample mini batch)\\
+$A_t^+ = \{(x, y) \in A_t: y\langle w_t,x\rangle < 1\}$ (only use points \\
+$ \nabla_t = \lambda w_t - \frac{\eta_t}{|A_t|}\sum_{(x,y) \in A_t^+}yx$ \qquad where $\nabla>0$)\\
+$\eta_t = \frac{1}{t\lambda}$\\
+$w_t' = w_t - \eta_t\nabla_t$ (negative gradient direction)\\
+$w_{t+1} = w_t' \min\{1,\frac{1}{||w_t'||\sqrt{\lambda}}\}$ (project back)\\
+\textbf{Adagrad:}\\
+$w_{t+1} = \arg \min_{w\in S}||w - (w_t - \eta G_t^{-1}\nabla f_t(w_t))||_{G_t}$, $G_t = (\sum_{\tau=1}^{t}\nabla f_{\tau}(w_{\tau})f_{\tau}(w_{\tau})^T)^{\frac{1}{2}}$, or just diag.\\
+\textbf{PSGD:} randomly partition data to k machines which run SGD independently.  After T iterations take weighted sum of obtained weights.\\
+$w_T = \frac{1}{k} \sum_{i=1}^k w_i$.  Parallelization helps if $k = O(1/\lambda)$\\
+\textbf{L1-ball projection: } $Proj_S(w) = \arg\min_{||w'||_1\leq c}||w'-w||_2$ using $w_i=\mathrm{sign}(w_i)\max\{w_i-\beta,0\}$
+
+\subsection*{Feature selection} 
+\textbf{L1 regularization:} replace $||w||_2$ with $||w||_1$ for sparse solutions. \\
+modified projection: $\bar{w}_i = \mathrm{sign}(w_i) \max\{|w_i|-\beta,0\}$ where $\beta$ is computed in linear time.
+
+
+\subsection{Random Fourier Features / Nystroem}
+For shift-invariant kernels ($k(x, y) = k(x -y)$) \\
+$p(\omega)=\frac{1}{2\pi}\int e^{-j\omega'\delta}k(\delta) \diff\Delta$ \\
+$\omega_i \sim p, b_i \sim U(0, 2\pi) $\\
+$z(x) \equiv \sqrt{2/m}[cos(\omega_1'x+b_1) \dots cos(\omega_m'x+b_m)]$ \\
+In practice: pick random samples\\
+$S = \{\hat{x}_1 \dots \hat{x}_n\} \subseteq X$ \\
+$K_{SXij} = k(\hat{x_i}, x_j)$, $K_{SSij} = k(\hat{x_i}, \hat{x_j})$ \\
+approximate $K = K_{XS}K_{SS}^{-1}K_{SX}$

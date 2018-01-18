@@ -1,0 +1,25 @@
+% -*- root: main.tex -*-
+\section{Submodularity}
+\subsection*{Approximation guarantee}
+The greedy maximum coverage produces a $A$, where $F(A) \geq 1-\frac{1}{e} \approx 64\%$ of optimal value. $F$ must be nonneg. monotone and submodular.
+
+\subsection*{Submodularity}
+$F$ is submodular on $V$: $\forall A \subseteq B$, $s \not \in B$\\
+$F(A \cup \{s\}) - F(A) \geq F(B \cup \{s\})-F(B)$
+
+\subsection*{Closedness property}
+nonnegative linear combination:\\
+$F(A) = \sum_i \lambda_i F_i(A), \lambda_i \geq 0$ is SM \Leftrightarrow $F_i$ is SM\\
+Restriction: $\hat{F}(S) = F(S \cap W)$, for $W \subset V$\\
+Conditioning: $\hat{F}(S) = F(S \cup W)$, for $W \subset V$\\
+Reflexion: $\hat{F}(S) = F(V \backslash S)$
+
+\subsection*{Submodularity and Concavity}
+$g: \mathbb{N} \rightarrow \mathbb{R}, F(A) = g(|A|)$, then $F(A)$ submodular if and only if $g$ is concave.
+
+\subsection*{``Lazy'' greedy algorithm}
+Key observation: Marginal benefits $\Delta(s|A_i) = F(A_i \cup \{s\}) -F(A_i)$ can never increase for a fix $s$.\\
+1. evaluate all marginal benefits $\Delta_i$ and take the best\\
+2. order the list of marginal benefits\\
+3. Re-evaluate $\Delta_i$ for top element\\
+4. If $\Delta_i$ stays on top, use it, otherwise resort.

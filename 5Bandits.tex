@@ -1,0 +1,111 @@
+% -*- root: main.tex -*-
+\section{Bandits}
+\subsection*{k-armed bandits}
+Each arm $i$ wins with probability $\mu_i$. All drawns are independent given $\mu_1,...,\mu_k$
+
+\subsection*{Stochastic k-armed bandits}
+Discrete set of $k$ choices, each associated with unknow ind. prob. distr. $P_i$ supported in $[0,1]$. We play for $T$ rounds, in each we pick an arm $i$, and obtain an random sample $y_i$ from $P_i$. Goal: $\max \sum_{t=1}^T y_t$
+
+\subsection*{Regret}
+Let $\mu_i$ be the mean of $P_i$\\
+Payoff of best decision: $\mu^* = \max_i \mu_i$\\
+Expected regret at time t: $r_t=\mu*-\mu_{i_t}$\\
+Total expected regret: $R_T = \sum_{t=1}^T r_t$\\
+Typical Goal: $\frac{R_T}{T} \rightarrow 0 \text{ as } T \rightarrow\infty$
+
+\subsection*{Exploration-Exploitation Tradeoff}
+\emph{Exploration:} Gathering data about payoffs\\
+\emph{Expoitation:} Making choices based on data already gathered
+
+\subsection*{$\epsilon$-greedy Exploration-Exploitation Algo.}
+For $t=1:T$, set $\epsilon_t = O \left ( \frac{1}{t} \right )$\\
+With prob. $\epsilon_t:$ Explore uniformly at random\\
+With prob. $1- \epsilon_t$: Exploit picking highest empirical mean payoff\\
+\emph{Theorem:} For suitable $\epsilon_t$: $R_T = O(k \log T)$,\\
+Regret: $\frac{R_T}{T} = O \left ( \frac{k \log T}{T} \right )$
+
+\subsection*{Calculating confidence bounds}
+Suppose we fix arm $i$\\
+Let $Y_i,...,Y_m$ be the reward of arm $i$ so far\\
+Mean payoff: $\mu=\mathbb{E}[Y] \equiv \frac{1}{m}\sum_{l=1}^m Y_l = \hat{\mu}_m$\\
+We want to obtain b, s.t. $P(|\mu - \hat{\mu}_m|\leq b)$ w.h.p
+
+\subsection*{Hoeffding's inequality}
+Let $X_1,...,X_m$ be i.i.d. RV taking values in $[0,1]$\\
+$\mu = \mathbb{E}[X], \hat{\mu}_m = \frac{1}{m} \sum_{l=1}^m X_l$\\
+then $P(|\mu - \hat{\mu}_m^{(i)}| \geq b) \leq 2 \exp (-2b^2m)$
+
+\subsection*{UCB1 confidence bound}
+By using the Hoeffdings inequality:\\
+$e^{2b^2m} \leq \frac{\delta}{2}$
+$\Leftrightarrow b \geq \sqrt{\frac{1}{2m} \log(\frac{2}{\delta})}$\\
+$\Righarrow$ if we pick $b$, then $|\mu - \hat{\mu}_m^{(i)}| \leq b$ w.p $\geq 1-\delta$\\
+We want this to hold for all rounds!\\
+$P(\cup_{i,m} E_{i,m}) \leq \sum_{i,m} P(E_{i,m}) = \sum_{i,m} \delta_m \leq \delta$\\
+This can be fullfilled by choosing \delta_m = \frac{c}{m^2}\frac{1}{k}\delta
+
+\subsection*{UCB1 algorithm}
+Set $\hat{\mu}_1,...,\hat{\mu}_k=0, n_1,...,n_k=0$\\
+Try all arms once\\
+For $t = 1:T-k$\\
+1. For each arm $i$: $UCB(i) = \hat{\mu}_i + \sqrt{\frac{2 \log(t)}{n_i}}$\\
+2. Pick arm $j = \arg \max_i UCB(i)$, observe $y_t$\\
+3. Set $n_j = n_j + 1, \hat{\mu}_j = \hat{\mu}_j + \frac{1}{n_j} (y_t - \hat{\mu}_j)$
+
+\subsection*{Contextual bandits}
+In each round $t$ do:\\
+1. Observe context $z_t \in \mathcal{Z}$\\
+2. Pick $x_t \in \mathcal{A}_t$\\
+3. Observe $y_t = f(x_t, z_t) + \epsilon_t$\\
+4. Incur regret $r_t = \max_{x \in \mathcal{A}_t} f(x,z_t) - f(x_t, z_t)$\\
+The cumulative contextual regret: $R_t = \sum_{t=1}^T r_t$
+
+\subsection*{Stochastic linear bandits}
+In each round $t$ do:\\
+1. Observe user features $z_t \in \mathbb{R}^d$\\
+2. Pick recommendation $x_t \in \mathcal{A}_t = \{1,..., k\}$\\
+3. Observe CTR $y_t = w^T_{x_t} z_t + \epsilon_t$
+Goal: minimize square loss:\\
+$\hat{w_i} = \arg \min_w \sum_{t=1}^m (y_t - w^T z_t)^2 + ||w||_2^2$\\
+Closed form: $\hat{w}_i = (D_i^T D_i + I_d)^{-1} D_i^T y_i$,\\
+where $D_i = [z_1, \dots, z_n]^T, y_i = [y_1, \dots, y_n]^T$\\
+$| \hat{w}_i^T z_t - w_i^T z^T| \leq \alpha \sqrt{z_t^T(D_i^TD_i+I)^{-1}z_t}$
+with prob. at least $1-\delta$ as long as $\alpha = 1 + \sqrt{\log(2/\delta)/2}$\\
+We set $M_{i,t} = D_i^T D_i + i_d$
+
+\subsection*{LinUCB Algorithm}
+For $t=1:T$\\
+1. Receive action set $\mathcal{A}_t$ and features $z_t$\\
+2. For all $x \in \mathcal{A}_t$:\\
+if $x$ is new, $M_x = I$, $b_x = 0$\\
+Set $\hat{w}_x = M_x^{-1} b_x$\\
+Set $UCB(x) = \hat{w}_x^T z_t + \alpha\sqrt{z_t^T M_x^{-1} z_t}$\\
+3. Recommend $x_t = \arg \max_{x\in \mathcal{A}_t} UCB(x)$\\
+4. Observe reward $y_t$\\
+5. Set $M_x =M_x + z_tz_t^T, b_x = b_x + y_t z_t$
+
+\subsection*{Hybrid model}
+Capture separate and shared effects:
+$y_t = w_i^T z_t + \beta^T \phi(x_i, z_t) + \epsilon_t$, $\phi(x_i, z_t) = vec(x_i z_t^T)$\\
+Now need to estimate both $w_i$ and $\beta$
+
+\subsection*{Rejection sampling}
+For $t=1:\infty$\\
+1. Get next event $(x_t^{(1)},...,x_t^{(k)}, z_t, a_t, y_t)$ from log\\
+2. Use bandit algorithm to pick $\hat{a}_t$\\
+3. If $\hat{a}_t = a_t$: Feedback reward $y_t$\\
+4. Stop when T events have been kept\\
+This approach is unbiased
+
+\subsection*{Feature vector dimension reduction}
+1. Observe training data $D=\{(\phi_{a,n},\phi_{u,n}, y_n)\}$\\
+2. Model using logistic reg: $y_i\approx \sigma(\phi_{a,n}W\phi_{u,n})$\\
+3. Learn coefficients $W$\\
+4. $\psi_{a,i}=\phi_{a,i}W$\\
+5. Apply k-means clustering to $\psi_{a,i}$\\
+6. Final features: $x_{i,j}=\frac{1}{Z}exp(-||\psi_{a,i}-\mu_j||^2_2)$
+
+\subsection*{Coarse to fine selection}
+Recommend article $i$ that maximizes:\\
+$\arg\max_i \hat{w}_i^T z_t + \alpha \sqrt{z_t^T M_t^{-1} z_t} +\\
+\beta \sqrt{z_t^T M_t^{-1} U \hat{M}_t^{-1} U^T z_t}$
